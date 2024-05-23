@@ -2,9 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const UserLog = require('./models/userLog');
 const socketIo = require('socket.io');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+app.use(cors()); // Enable CORS
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -13,7 +15,12 @@ const server = app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
 
-const io = socketIo(server);
+const io = socketIo(server, {
+    cors: {
+        origin: "http://localhost:5500", // Replace with your client origin
+        methods: ["GET", "POST"]
+    }
+});
 
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
