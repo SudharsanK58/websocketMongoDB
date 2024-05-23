@@ -19,25 +19,16 @@
     <script>
         const socket = io('http://localhost:3000'); // Ensure this URL matches your server
 
-        socket.on('websocketDataChange', (change) => {
+        socket.on('initialData', (change) => {
             console.log('WebSocket Data Change:', change);
 
             const dataList = document.getElementById('websocket-data-list');
             const listItem = document.createElement('li');
 
-            if (change.operationType === 'insert') {
-                listItem.textContent = `New entry added: ${JSON.stringify(change.fullDocument)}`;
-            } else if (change.operationType === 'update') {
-                listItem.textContent = `Entry updated: ${JSON.stringify(change.updateDescription.updatedFields)}`;
-            } else if (change.operationType === 'delete') {
-                listItem.textContent = `Entry deleted: ${JSON.stringify(change.documentKey)}`;
-            } else {
                 listItem.textContent = `Other change: ${JSON.stringify(change)}`;
-            }
 
             dataList.appendChild(listItem);
         });
-
         socket.on('connect', () => {
             console.log('Connected to WebSocket server');
         });
