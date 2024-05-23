@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Data Update</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #data-list { list-style-type: none; padding: 0; }
+        #data-list li { padding: 8px; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Real-time Data Update</h1>
+    <ul id="data-list"></ul>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
+    <script>
+        const socket = io('http://localhost:3000'); // Ensure this URL matches your server
+
+        socket.on('dataChange', (change) => {
+            console.log('Change:', change);
+
+            // Update HTML content based on the change
+            const dataList = document.getElementById('data-list');
+
+            // Create a list item to display the change
+            const listItem = document.createElement('li');
+
+            // Check the type of change and display accordingly
+            if (change.operationType === 'insert') {
+                listItem.textContent = `New entry added: ${JSON.stringify(change.fullDocument)}`;
+            } else if (change.operationType === 'update') {
+                listItem.textContent = `Entry updated: ${JSON.stringify(change.updateDescription.updatedFields)}`;
+            } else if (change.operationType === 'delete') {
+                listItem.textContent = `Entry deleted: ${JSON.stringify(change.documentKey)}`;
+            } else {
+                listItem.textContent = `Other change: ${JSON.stringify(change)}`;
+            }
+
+            // Append the new list item to the data list
+            dataList.appendChild(listItem);
+        });
+
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket server');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from WebSocket server');
+        });
+    </script>
+</body>
+</html>
