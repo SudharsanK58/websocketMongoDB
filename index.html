@@ -6,28 +6,25 @@
     <title>Real-time Data Update</title>
     <style>
         body { font-family: Arial, sans-serif; }
-        #data-list { list-style-type: none; padding: 0; }
-        #data-list li { padding: 8px; border-bottom: 1px solid #ddd; }
+        #websocket-data-list { list-style-type: none; padding: 0; }
+        #websocket-data-list li { padding: 8px; border-bottom: 1px solid #ddd; }
     </style>
 </head>
 <body>
     <h1>Real-time Data Update</h1>
-    <ul id="data-list"></ul>
+    <h2>WebSocket Data</h2>
+    <ul id="websocket-data-list"></ul>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
     <script>
         const socket = io('http://localhost:3000'); // Ensure this URL matches your server
 
-        socket.on('dataChange', (change) => {
-            console.log('Change:', change);
+        socket.on('websocketDataChange', (change) => {
+            console.log('WebSocket Data Change:', change);
 
-            // Update HTML content based on the change
-            const dataList = document.getElementById('data-list');
-
-            // Create a list item to display the change
+            const dataList = document.getElementById('websocket-data-list');
             const listItem = document.createElement('li');
 
-            // Check the type of change and display accordingly
             if (change.operationType === 'insert') {
                 listItem.textContent = `New entry added: ${JSON.stringify(change.fullDocument)}`;
             } else if (change.operationType === 'update') {
@@ -38,7 +35,6 @@
                 listItem.textContent = `Other change: ${JSON.stringify(change)}`;
             }
 
-            // Append the new list item to the data list
             dataList.appendChild(listItem);
         });
 
