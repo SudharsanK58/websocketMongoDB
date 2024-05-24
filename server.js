@@ -50,7 +50,8 @@ mongoose
           networkConnection: doc.networkConnection || "N/A",
           networkName: doc.networkName || "N/A",
           bleMinor: doc.bleMinor || "N/A",
-          bleTxpower: doc.bleTxpower || "N/A",
+          bleTxpower:
+            doc.bleTxpower !== undefined ? parseInt(doc.bleTxpower) : "N/A",
           bleVersion: doc.bleVersion || "N/A",
           current_temp: doc["current temp"] || "N/A", // Bracket notation for field with space
           firmwareVersion: doc.firmwareVersion || "N/A",
@@ -90,7 +91,8 @@ mongoose
           networkConnection: doc.networkConnection || "N/A",
           networkName: doc.networkName || "N/A",
           bleMinor: doc.bleMinor || "N/A",
-          bleTxpower: doc.bleTxpower || "N/A",
+          bleTxpower:
+            doc.bleTxpower !== undefined ? parseInt(doc.bleTxpower) : "N/A",
           bleVersion: doc.bleVersion || "N/A",
           current_temp: doc["current temp"] || "N/A", // Bracket notation for field with space
           firmwareVersion: doc.firmwareVersion || "N/A",
