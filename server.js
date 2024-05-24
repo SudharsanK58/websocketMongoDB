@@ -1,11 +1,9 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const http = require('http');
-const UserLog = require('./models/userLog');
-const WebsocketData = require('./models/WebsocketData');
-const socketIo = require('socket.io');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const http = require("http");
+const socketIo = require("socket.io");
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 app.use(cors()); // Enable CORS
@@ -19,94 +17,96 @@ const io = socketIo(server, {
     origin: "*", // Allow connections from any origin
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["my-custom-header"],
-    credentials: true // Allow credentials (cookies, authorization headers, etc.)
-  }
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  },
 });
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('Connected to MongoDB');
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
 
-  // Send all data from the collection to the client upon connection
-  io.on('connection', async (socket) => {
-    console.log('A user connected');
-    try {
-      const allData = await WebsocketData.find();
-      socket.emit('initialData', allData); // Send all data to the client
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
+    // Send selected fields from the collection to the client upon connection
+    io.on("connection", async (socket) => {
+      console.log("A user connected");
+      try {
+        const db = mongoose.connection.db;
+        const allData = await db
+          .collection("DeviceLog")
+          .find()
+          .sort({ timestamp: -1 }) // Sort by timestamp in descending order
+          .toArray();
 
-    socket.on('disconnect', () => {
-      console.log('User disconnected');
+        // Map documents to return only selected fields
+        const formattedData = allData.map((doc) => ({
+          deviceId: doc.deviceId || "N/A",
+          timestamp: doc.timestamp || "N/A",
+          StartingTime: doc.StartingTime || "N/A",
+          validationTopic: doc.validationTopic || "N/A",
+          bleMacAddress: doc.bleMacAddress || "N/A",
+          networkConnection: doc.networkConnection || "N/A",
+          networkName: doc.networkName || "N/A",
+          bleMinor: doc.bleMinor || "N/A",
+          bleTxpower: doc.bleTxpower || "N/A",
+          bleVersion: doc.bleVersion || "N/A",
+          current_temp: doc["current temp"] || "N/A", // Bracket notation for field with space
+          firmwareVersion: doc.firmwareVersion || "N/A",
+          vehicleNo: doc.vehicleNo || "N/A",
+        }));
+
+        socket.emit("initialData", formattedData); // Send formatted data to the client
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+
+      socket.on("disconnect", () => {
+        console.log("User disconnected");
+      });
     });
+
+    // Listen for changes in the DeviceLog collection
+    const changeStream = mongoose.connection.collection("DeviceLog").watch();
+
+    changeStream.on("change", async (change) => {
+      console.log("Change detected:", change);
+      try {
+        const db = mongoose.connection.db;
+        const allData = await db
+          .collection("DeviceLog")
+          .find()
+          .sort({ timestamp: -1 }) // Sort by timestamp in descending order
+          .toArray();
+
+        // Map documents to return only selected fields
+        const formattedData = allData.map((doc) => ({
+          deviceId: doc.deviceId || "N/A",
+          timestamp: doc.timestamp || "N/A",
+          StartingTime: doc.StartingTime || "N/A",
+          validationTopic: doc.validationTopic || "N/A",
+          bleMacAddress: doc.bleMacAddress || "N/A",
+          networkConnection: doc.networkConnection || "N/A",
+          networkName: doc.networkName || "N/A",
+          bleMinor: doc.bleMinor || "N/A",
+          bleTxpower: doc.bleTxpower || "N/A",
+          bleVersion: doc.bleVersion || "N/A",
+          current_temp: doc["current temp"] || "N/A", // Bracket notation for field with space
+          firmwareVersion: doc.firmwareVersion || "N/A",
+          vehicleNo: doc.vehicleNo || "N/A",
+        }));
+
+        io.emit("initialData", formattedData); // Send formatted data to all connected clients
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    });
+  })
+  .catch((error) => {
+    console.error("Error connecting to MongoDB:", error);
   });
 
-  const changeStream = WebsocketData.watch();
-
-  // Send updated data to the client whenever a change occurs in the collection
-  changeStream.on('change', async (change) => {
-    console.log('Change detected:', change);
-    try {
-      const allData = await WebsocketData.find();
-      io.emit('initialData', allData); // Send updated data to all connected clients
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  });
-}).catch((error) => {
-  console.error('Error connecting to MongoDB:', error);
-});
-
-server.listen(3000, () => {
-  console.log('WebSocket server is running on port 3000');
-});
-// Route to serve HTML file
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
-
-// CRUD APIs for websocketdata collection
-app.post('/websocketdata', async (req, res) => {
-    try {
-        const newData = new WebsocketData(req.body);
-        await newData.save();
-        io.sockets.emit('websocketDataChange', { operationType: 'insert', fullDocument: newData });
-        res.status(201).json(newData);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-app.get('/websocketdata', async (req, res) => {
-    try {
-        const data = await WebsocketData.find();
-        res.status(200).json(data);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-app.put('/websocketdata/:id', async (req, res) => {
-    try {
-        const updatedData = await WebsocketData.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedData) return res.status(404).json({ message: 'Data not found' });
-        io.sockets.emit('websocketDataChange', { operationType: 'update', documentKey: { _id: req.params.id }, updateDescription: { updatedFields: req.body } });
-        res.status(200).json(updatedData);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-app.delete('/websocketdata/:id', async (req, res) => {
-    try {
-        const deletedData = await WebsocketData.findByIdAndDelete(req.params.id);
-        if (!deletedData) return res.status(404).json({ message: 'Data not found' });
-        io.sockets.emit('websocketDataChange', { operationType: 'delete', documentKey: { _id: req.params.id } });
-        res.status(200).json({ message: 'Data deleted' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+server.listen(3001, () => {
+  console.log("WebSocket server is running on port 3001");
 });
