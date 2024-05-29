@@ -53,7 +53,7 @@ mongoose
           bleTxpower:
             doc.bleTxpower !== undefined ? parseInt(doc.bleTxpower) : "N/A",
           bleVersion: doc.bleVersion || "N/A",
-          current_temp: doc["current temp"] || "N/A", // Bracket notation for field with space
+          currentTemp: doc["current temp"] || "N/A", // Bracket notation for field with space
           firmwareVersion: doc.firmwareVersion || "N/A",
           vehicleNo: doc.vehicleNo || "N/A",
         }));
@@ -102,6 +102,57 @@ mongoose
         io.emit("initialData", formattedData); // Send formatted data to all connected clients
       } catch (error) {
         console.error("Error fetching data:", error);
+      }
+    });
+    // Listen for changes in the TicketLog collection
+    const ticketLogChangeStream = mongoose.connection
+      .collection("TicketLog")
+      .watch();
+
+    ticketLogChangeStream.on("change", async (change) => {
+      console.log("Change detected in TicketLog:", change);
+      try {
+        const db = mongoose.connection.db;
+        const latestTicket = await db
+          .collection("TicketLog")
+          .findOne({}, { sort: { now_time: -1 } }); // Get the latest document
+
+        if (latestTicket) {
+          const message = `${
+            latestTicket.username || "N/A"
+          } just got validated!`;
+          io.emit("deviceNotification", message); // Emit the notification message
+        }
+      } catch (error) {
+        console.error("Error fetching latest ticket:", error);
+      }
+    });
+    const deviceLogChangeStream = mongoose.connection
+      .collection("DeviceLog")
+      .watch();
+
+    deviceLogChangeStream.on("change", async (change) => {
+      console.log("Change detected in DeviceLog:", change);
+      try {
+        const db = mongoose.connection.db;
+        const latestDeviceLog = await db
+          .collection("DeviceLog")
+          .findOne({}, { sort: { timestamp: -1 } }); // Get the latest document
+
+        if (latestDeviceLog) {
+          let message =
+            latestDeviceLog.vehicleNo || latestDeviceLog.deviceId || "N/A";
+          if (
+            !latestDeviceLog.vehicleNo ||
+            latestDeviceLog.vehicleNo === "N/A"
+          ) {
+            message = latestDeviceLog.deviceId || "N/A";
+          }
+          const notificationMessage = `Vehicle ${message} is now moving!`;
+          io.emit("deviceNotification2", notificationMessage); // Emit the notification message
+        }
+      } catch (error) {
+        console.error("Error fetching latest device log:", error);
       }
     });
   })
