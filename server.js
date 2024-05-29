@@ -109,6 +109,7 @@ mongoose
     console.error("Error connecting to MongoDB:", error);
   });
 
-server.listen(3001, () => {
-  console.log("WebSocket server is running on port 3001");
+const PORT = process.env.PORT || 3002;
+server.listen(PORT, () => {
+  console.log(`WebSocket server is running on port ${PORT}`);
 });
