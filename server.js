@@ -94,7 +94,7 @@ mongoose
           bleTxpower:
             doc.bleTxpower !== undefined ? parseInt(doc.bleTxpower) : "N/A",
           bleVersion: doc.bleVersion || "N/A",
-          current_temp: doc["current temp"] || "N/A", // Bracket notation for field with space
+          currentTemp: doc["current temp"] || "N/A", // Bracket notation for field with space
           firmwareVersion: doc.firmwareVersion || "N/A",
           vehicleNo: doc.vehicleNo || "N/A",
         }));
