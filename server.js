@@ -72,7 +72,7 @@ mongoose
     const changeStream = mongoose.connection.collection("DeviceLog").watch();
 
     changeStream.on("change", async (change) => {
-      console.log("Change detected:", change);
+      console.log("Device table Change detected:");
       try {
         const db = mongoose.connection.db;
         const allData = await db
@@ -110,7 +110,7 @@ mongoose
       .watch();
 
     ticketLogChangeStream.on("change", async (change) => {
-      console.log("Change detected in TicketLog:", change);
+      console.log("Change detected in TicketLog:");
       try {
         const db = mongoose.connection.db;
         const latestTicket = await db
@@ -132,7 +132,7 @@ mongoose
       .watch();
 
     deviceLogChangeStream.on("change", async (change) => {
-      console.log("Change detected in DeviceLog:", change);
+      console.log("Change detected in DeviceLog:");
       try {
         const db = mongoose.connection.db;
         const latestDeviceLog = await db
@@ -140,16 +140,23 @@ mongoose
           .findOne({}, { sort: { timestamp: -1 } }); // Get the latest document
 
         if (latestDeviceLog) {
-          let message =
-            latestDeviceLog.vehicleNo || latestDeviceLog.deviceId || "N/A";
-          if (
-            !latestDeviceLog.vehicleNo ||
-            latestDeviceLog.vehicleNo === "N/A"
-          ) {
-            message = latestDeviceLog.deviceId || "N/A";
+          // Convert to ISO strings and compare
+          const startingTime = new Date(
+            latestDeviceLog.StartingTime
+          ).toISOString();
+          const timestamp = new Date(latestDeviceLog.timestamp).toISOString();
+          if (startingTime === timestamp) {
+            let message =
+              latestDeviceLog.vehicleNo || latestDeviceLog.deviceId || "N/A";
+            if (
+              !latestDeviceLog.vehicleNo ||
+              latestDeviceLog.vehicleNo === "N/A"
+            ) {
+              message = latestDeviceLog.deviceId || "N/A";
+            }
+            const notificationMessage = `Vehicle ${message} is now moving!`;
+            io.emit("deviceNotification2", notificationMessage); // Emit the notification message
           }
-          const notificationMessage = `Vehicle ${message} is now moving!`;
-          io.emit("deviceNotification2", notificationMessage); // Emit the notification message
         }
       } catch (error) {
         console.error("Error fetching latest device log:", error);
