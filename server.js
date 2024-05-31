@@ -44,8 +44,12 @@ mongoose
         const formattedData = allData.map((doc) => ({
           deviceId: doc.deviceId || "N/A",
           timestamp: doc.timestamp || "N/A",
-          StartingTime: doc.StartingTime || "N/A",
-          validationTopic: doc.validationTopic || "N/A",
+          timestamp: doc.timestamp
+            ? new Date(doc.timestamp).toISOString().slice(0, -1) + "000"
+            : "N/A",
+          StartingTime: doc.StartingTime
+            ? new Date(doc.StartingTime).toISOString().slice(0, -1) + "000"
+            : "N/A",
           bleMacAddress: doc.bleMacAddress || "N/A",
           networkConnection: doc.networkConnection || "N/A",
           networkName: doc.networkName || "N/A",
@@ -84,8 +88,12 @@ mongoose
         // Map documents to return only selected fields
         const formattedData = allData.map((doc) => ({
           deviceId: doc.deviceId || "N/A",
-          timestamp: doc.timestamp || "N/A",
-          StartingTime: doc.StartingTime || "N/A",
+          timestamp: doc.timestamp
+            ? new Date(doc.timestamp).toISOString().slice(0, -1) + "000"
+            : "N/A",
+          StartingTime: doc.StartingTime
+            ? new Date(doc.StartingTime).toISOString().slice(0, -1) + "000"
+            : "N/A",
           validationTopic: doc.validationTopic || "N/A",
           bleMacAddress: doc.bleMacAddress || "N/A",
           networkConnection: doc.networkConnection || "N/A",
