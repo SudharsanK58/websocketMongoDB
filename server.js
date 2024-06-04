@@ -41,6 +41,7 @@ mongoose
           .toArray();
 
         // Map documents to return only selected fields
+
         const formattedData = allData.map((doc) => ({
           deviceId: doc.deviceId || "N/A",
           timestamp: doc.timestamp || "N/A",
