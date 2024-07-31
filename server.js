@@ -73,46 +73,6 @@ mongoose
       });
     });
 
-    // Listen for changes in the DeviceLog collection
-    const changeStream = mongoose.connection.collection("DeviceLog").watch();
-
-    changeStream.on("change", async (change) => {
-      console.log("Device table Change detected:");
-      try {
-        const db = mongoose.connection.db;
-        const allData = await db
-          .collection("DeviceLog")
-          .find()
-          .sort({ timestamp: -1 }) // Sort by timestamp in descending order
-          .toArray();
-
-        // Map documents to return only selected fields
-        const formattedData = allData.map((doc) => ({
-          deviceId: doc.deviceId || "N/A",
-          timestamp: doc.timestamp
-            ? new Date(doc.timestamp).toISOString().slice(0, -1) + "000"
-            : "N/A",
-          StartingTime: doc.StartingTime
-            ? new Date(doc.StartingTime).toISOString().slice(0, -1) + "000"
-            : "N/A",
-          validationTopic: doc.validationTopic || "N/A",
-          bleMacAddress: doc.bleMacAddress || "N/A",
-          networkConnection: doc.networkConnection || "N/A",
-          networkName: doc.networkName || "N/A",
-          bleMinor: doc.bleMinor || "N/A",
-          bleTxpower:
-            doc.bleTxpower !== undefined ? parseInt(doc.bleTxpower) : "N/A",
-          bleVersion: doc.bleVersion || "N/A",
-          currentTemp: doc["current temp"] || "N/A", // Bracket notation for field with space
-          firmwareVersion: doc.firmwareVersion || "N/A",
-          vehicleNo: doc.vehicleNo || "N/A",
-        }));
-
-        io.emit("initialData", formattedData); // Send formatted data to all connected clients
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    });
     // Listen for changes in the TicketLog collection
     const ticketLogChangeStream = mongoose.connection
       .collection("TicketLog")
@@ -134,41 +94,6 @@ mongoose
         }
       } catch (error) {
         console.error("Error fetching latest ticket:", error);
-      }
-    });
-    const deviceLogChangeStream = mongoose.connection
-      .collection("DeviceLog")
-      .watch();
-
-    deviceLogChangeStream.on("change", async (change) => {
-      console.log("Change detected in DeviceLog:");
-      try {
-        const db = mongoose.connection.db;
-        const latestDeviceLog = await db
-          .collection("DeviceLog")
-          .findOne({}, { sort: { timestamp: -1 } }); // Get the latest document
-
-        if (latestDeviceLog) {
-          // Convert to ISO strings and compare
-          const startingTime = new Date(
-            latestDeviceLog.StartingTime
-          ).toISOString();
-          const timestamp = new Date(latestDeviceLog.timestamp).toISOString();
-          if (startingTime === timestamp) {
-            let message =
-              latestDeviceLog.vehicleNo || latestDeviceLog.deviceId || "N/A";
-            if (
-              !latestDeviceLog.vehicleNo ||
-              latestDeviceLog.vehicleNo === "N/A"
-            ) {
-              message = latestDeviceLog.deviceId || "N/A";
-            }
-            const notificationMessage = `Vehicle ${message} is now moving!`;
-            io.emit("deviceNotification2", notificationMessage); // Emit the notification message
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching latest device log:", error);
       }
     });
   })
